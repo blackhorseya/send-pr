@@ -9,3 +9,7 @@ help: ## Show help message.
 		sort | \
 		awk 'BEGIN {FS = ":.*?## "}; \
 		{printf "  %-18s %s\n", $$1, $$2}'
+
+.PHONY: install-tools
+install-tools: ## Install tools
+	awk -F'"' '/_/ {print $$2}' tools.go | xargs -tI % go install %
