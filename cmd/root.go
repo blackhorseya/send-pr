@@ -16,7 +16,6 @@ import (
 )
 
 const (
-	defaultMaxTokens   = 300
 	defaultModel       = openai.O1Mini
 	defaultTemperature = 1.0
 	defaultTopP        = 1.0
@@ -123,6 +122,10 @@ func generateContent(diff string) (string, error) {
 	req := openai.ChatCompletionRequest{
 		Model: defaultModel,
 		Messages: []openai.ChatCompletionMessage{
+			{
+				Role:    openai.ChatMessageRoleAssistant,
+				Content: "You are a helpful AI assistant that helps write a PR description based on the diff of the source and target branches.",
+			},
 			{
 				Role:    openai.ChatMessageRoleUser,
 				Content: content,
