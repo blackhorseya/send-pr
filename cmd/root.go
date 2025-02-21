@@ -113,6 +113,7 @@ func generateContent(diff string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("取得 prompt 失敗: %w", err)
 	}
+	slog.Debug("Prompt content", "content", content)
 
 	client, err := initOpenAIClient()
 	if err != nil {
@@ -123,15 +124,10 @@ func generateContent(diff string) (string, error) {
 		Model: defaultModel,
 		Messages: []openai.ChatCompletionMessage{
 			{
-				Role:    openai.ChatMessageRoleAssistant,
-				Content: "You are a helpful assistant.",
-			},
-			{
 				Role:    openai.ChatMessageRoleUser,
 				Content: content,
 			},
 		},
-		MaxTokens:   defaultMaxTokens,
 		Temperature: defaultTemperature,
 		TopP:        defaultTopP,
 	}
