@@ -105,7 +105,7 @@ func generateContent(diff string) (string, error) {
 	}
 
 	req := openai.ChatCompletionRequest{
-		Model: openai.GPT3Dot5Turbo,
+		Model: openai.GPT4oMini,
 		Messages: []openai.ChatCompletionMessage{
 			{
 				Role:    "user",
