@@ -100,11 +100,11 @@ var rootCmd = &cobra.Command{
 }
 
 func generateContent(diff string) (string, error) {
-	apiKey := os.Getenv("OPENAI_API_KEY")
-	if apiKey == "" {
-		return "", fmt.Errorf("請設定 OPENAI_API_KEY 環境變數")
+	client, err := initOpenAIClient()
+	if err != nil {
+		return "", err
 	}
-	client := openai.NewClient(apiKey)
+
 	req := openai.ChatCompletionRequest{
 		Model: openai.GPT3Dot5Turbo,
 		Messages: []openai.ChatCompletionMessage{
@@ -133,7 +133,7 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.send-pr.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/send-pr/.send-pr.yaml)")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
@@ -144,9 +144,10 @@ func initConfig() {
 	} else {
 		home, err := os.UserHomeDir()
 		cobra.CheckErr(err)
-		viper.AddConfigPath(home)
-		viper.SetConfigType("yaml")
+		configDir := fmt.Sprintf("%s/.config/send-pr", home)
+		viper.AddConfigPath(configDir)
 		viper.SetConfigName(".send-pr")
+		viper.SetConfigType("yaml")
 	}
 
 	viper.AutomaticEnv()
@@ -154,4 +155,22 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
 	}
+}
+
+func initOpenAIClient() (*openai.Client, error) {
+	apiKey := viper.GetString("openai.api_key")
+	if apiKey == "" {
+		apiKey = os.Getenv("OPENAI_API_KEY")
+	}
+	if apiKey == "" {
+		return nil, fmt.Errorf("請設定 openai.api_key 或 OPENAI_API_KEY 環境變數")
+	}
+
+	baseURL := viper.GetString("openai.base_url")
+	config := openai.DefaultConfig(apiKey)
+	if baseURL != "" {
+		slog.Debug("使用自訂的 OpenAI BaseURL", "baseURL", baseURL)
+		config.BaseURL = baseURL
+	}
+	return openai.NewClientWithConfig(config), nil
 }
