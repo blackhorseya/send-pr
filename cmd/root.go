@@ -15,6 +15,13 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	defaultMaxTokens   = 300
+	defaultModel       = openai.O1Mini
+	defaultTemperature = 1.0
+	defaultTopP        = 1.0
+)
+
 var cfgFile string
 var verbose bool
 
@@ -113,7 +120,7 @@ func generateContent(diff string) (string, error) {
 	}
 
 	req := openai.ChatCompletionRequest{
-		Model: openai.GPT4oMini,
+		Model: defaultModel,
 		Messages: []openai.ChatCompletionMessage{
 			{
 				Role:    openai.ChatMessageRoleAssistant,
@@ -124,6 +131,9 @@ func generateContent(diff string) (string, error) {
 				Content: content,
 			},
 		},
+		MaxTokens:   defaultMaxTokens,
+		Temperature: defaultTemperature,
+		TopP:        defaultTopP,
 	}
 	resp, err := client.CreateChatCompletion(context.Background(), req)
 	if err != nil {
