@@ -61,7 +61,7 @@ var rootCmd = &cobra.Command{
 
 		// 取得 git diff 結果
 		slog.Debug("Getting git diff", "sourceBranch", sourceBranch, "targetBranch", targetBranch)
-		diffBytes, err := exec.Command("git", "diff", sourceBranch, targetBranch).Output()
+		diffBytes, err := exec.Command("git", "diff", targetBranch, sourceBranch).Output()
 		if err != nil {
 			slog.Error("Failed to get git diff", "error", err)
 			fmt.Println("取得 git diff 失敗:", err)
