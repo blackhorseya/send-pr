@@ -8,59 +8,89 @@ import (
 	"os/exec"
 	"strings"
 
+	"log/slog"
+
 	"github.com/sashabaranov/go-openai"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var cfgFile string
+var verbose bool
 
 var rootCmd = &cobra.Command{
 	Use:   "send-pr [target branch]",
 	Short: "pr agent",
+	PreRun: func(cmd *cobra.Command, args []string) {
+		// 設定 logger 等級：只有帶 -v 才顯示 debug log
+		if verbose {
+			slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+				Level: slog.LevelDebug,
+			})))
+		} else {
+			slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+				Level: slog.LevelInfo,
+			})))
+		}
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
+			slog.Error("Target branch not provided")
 			fmt.Println("請提供 target branch")
 			os.Exit(1)
 		}
 		targetBranch := args[0]
+		slog.Debug("Target branch", "targetBranch", targetBranch)
 
 		// 取得當前 branch
+		slog.Debug("Getting current branch")
 		out, err := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
 		if err != nil {
+			slog.Error("Failed to get current branch", "error", err)
 			fmt.Println("取得當前 branch 失敗:", err)
 			os.Exit(1)
 		}
 		sourceBranch := strings.TrimSpace(string(out))
+		slog.Debug("Current branch", "sourceBranch", sourceBranch)
 
 		// 取得 git diff 結果
+		slog.Debug("Getting git diff", "sourceBranch", sourceBranch, "targetBranch", targetBranch)
 		diffBytes, err := exec.Command("git", "diff", sourceBranch, targetBranch).Output()
 		if err != nil {
+			slog.Error("Failed to get git diff", "error", err)
 			fmt.Println("取得 git diff 失敗:", err)
 			os.Exit(1)
 		}
 		diff := string(diffBytes)
+		slog.Debug("Git diff result", "diff", diff)
 
 		// 呼叫 OpenAI 產生 PR 說明內容
+		slog.Debug("Generating PR content with OpenAI")
 		aiContent, err := generateContent(diff)
 		if err != nil {
+			slog.Error("Failed to generate PR content", "error", err)
 			fmt.Println("產生 PR 說明內容失敗:", err)
 			os.Exit(1)
 		}
+		slog.Debug("Generated AI content", "aiContent", aiContent)
 
 		// 組合 Markdown 內容
 		prTitle := fmt.Sprintf("Merge %s into %s", sourceBranch, targetBranch)
 		markdown := fmt.Sprintf("# %s\n\n%s", prTitle, aiContent)
+		slog.Debug("Assembled markdown", "markdown", markdown)
 
 		// 將結果寫入 temporary markdown 檔案
+		slog.Debug("Writing markdown to temporary file")
 		tmpFile, err := ioutil.TempFile("", "pr_result_*.md")
 		if err != nil {
+			slog.Error("Failed to create temporary file", "error", err)
 			fmt.Println("建立 temporary file 失敗:", err)
 			os.Exit(1)
 		}
 		defer tmpFile.Close()
 
 		if _, err := tmpFile.Write([]byte(markdown)); err != nil {
+			slog.Error("Failed to write to temporary file", "error", err)
 			fmt.Println("寫入 temporary file 失敗:", err)
 			os.Exit(1)
 		}
@@ -104,6 +134,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.send-pr.yaml)")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
