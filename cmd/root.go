@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -81,7 +80,7 @@ var rootCmd = &cobra.Command{
 
 		// 將結果寫入 temporary markdown 檔案
 		slog.Debug("Writing markdown to temporary file")
-		tmpFile, err := ioutil.TempFile("", "pr_result_*.md")
+		tmpFile, err := os.CreateTemp("", "pr_result_*.md")
 		if err != nil {
 			slog.Error("Failed to create temporary file", "error", err)
 			fmt.Println("建立 temporary file 失敗:", err)
