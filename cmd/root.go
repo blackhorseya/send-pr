@@ -9,6 +9,7 @@ import (
 
 	"log/slog"
 
+	"github.com/blackhorseya/send-pr/internal/prompt"
 	"github.com/sashabaranov/go-openai"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -99,6 +100,13 @@ var rootCmd = &cobra.Command{
 }
 
 func generateContent(diff string) (string, error) {
+	content, err := prompt.GetPromptString(prompt.SummarizePRDiffTemplate, map[string]interface{}{
+		"file_diffs": diff,
+	})
+	if err != nil {
+		return "", fmt.Errorf("取得 prompt 失敗: %w", err)
+	}
+
 	client, err := initOpenAIClient()
 	if err != nil {
 		return "", err
@@ -108,8 +116,12 @@ func generateContent(diff string) (string, error) {
 		Model: openai.GPT4oMini,
 		Messages: []openai.ChatCompletionMessage{
 			{
-				Role:    "user",
-				Content: "請根據下面的 git diff 結果，幫我產出一份 PR 的說明內容：\n" + diff,
+				Role:    openai.ChatMessageRoleAssistant,
+				Content: "You are a helpful assistant.",
+			},
+			{
+				Role:    openai.ChatMessageRoleUser,
+				Content: content,
 			},
 		},
 	}
