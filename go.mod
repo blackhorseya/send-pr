@@ -3,6 +3,7 @@ module github.com/blackhorseya/send-pr
 go 1.23.4
 
 require (
+	github.com/sashabaranov/go-openai v1.37.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/cobra-cli v1.3.0
 	github.com/spf13/viper v1.19.0
