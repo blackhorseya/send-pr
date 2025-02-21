@@ -15,6 +15,12 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	defaultModel       = openai.O1Mini
+	defaultTemperature = 1.0
+	defaultTopP        = 1.0
+)
+
 var cfgFile string
 var verbose bool
 
@@ -55,7 +61,7 @@ var rootCmd = &cobra.Command{
 
 		// 取得 git diff 結果
 		slog.Debug("Getting git diff", "sourceBranch", sourceBranch, "targetBranch", targetBranch)
-		diffBytes, err := exec.Command("git", "diff", sourceBranch, targetBranch).Output()
+		diffBytes, err := exec.Command("git", "diff", targetBranch, sourceBranch).Output()
 		if err != nil {
 			slog.Error("Failed to get git diff", "error", err)
 			fmt.Println("取得 git diff 失敗:", err)
@@ -106,6 +112,7 @@ func generateContent(diff string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("取得 prompt 失敗: %w", err)
 	}
+	slog.Debug("Prompt content", "content", content)
 
 	client, err := initOpenAIClient()
 	if err != nil {
@@ -113,17 +120,19 @@ func generateContent(diff string) (string, error) {
 	}
 
 	req := openai.ChatCompletionRequest{
-		Model: openai.GPT4oMini,
+		Model: defaultModel,
 		Messages: []openai.ChatCompletionMessage{
 			{
 				Role:    openai.ChatMessageRoleAssistant,
-				Content: "You are a helpful assistant.",
+				Content: "You are a helpful AI assistant that helps write a PR description based on the diff of the source and target branches.",
 			},
 			{
 				Role:    openai.ChatMessageRoleUser,
 				Content: content,
 			},
 		},
+		Temperature: defaultTemperature,
+		TopP:        defaultTopP,
 	}
 	resp, err := client.CreateChatCompletion(context.Background(), req)
 	if err != nil {
