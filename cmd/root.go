@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	defaultModel       = openai.O1Mini
+	defaultModel       = openai.O3Mini
 	defaultTemperature = 1.0
 	defaultTopP        = 1.0
 )
