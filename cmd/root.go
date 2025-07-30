@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	defaultModel       = openai.O3Mini
+	defaultModel       = openai.GPT4Dot120250414
 	defaultTemperature = 1.0
 	defaultTopP        = 1.0
 )
